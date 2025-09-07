@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 
 const client = generateClient<Schema>();
 
-// Define a Product type matching Amplify's nullable fields
 interface Product {
   id: string;
   partNumber: string;
@@ -22,25 +21,44 @@ interface Product {
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
-  const query = searchParams.get("q") || "";
-  const [products, setProducts] = useState<Product[]>([]);
   const router = useRouter();
+  const [query, setQuery] = useState<string>("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const q = searchParams?.get("q") || "";
+    setQuery(q);
+
+    if (!q) {
+      setProducts([]);
+      return;
+    }
+
     const fetchProducts = async () => {
-      if (!query) return;
+      setLoading(true);
       try {
-        const { data } = await client.models.Product.list({
-          filter: { partNumber: { contains: query } },
+        const result = await client.models.Product.list({
+          filter: {
+            or: [
+              { partNumber: { contains: q } },
+              { name: { contains: q } },
+            ],
+          },
         });
-        // Cast Amplify response to Product[]
-        setProducts(data as Product[]);
+
+        // Gen 2 returns { data: ProductType[], nextToken?, errors? }
+        setProducts(result.data as Product[]);
       } catch (err) {
         console.error("Error fetching products:", err);
+        setProducts([]);
+      } finally {
+        setLoading(false);
       }
     };
+
     fetchProducts();
-  }, [query]);
+  }, [searchParams]);
 
   return (
     <main style={{ padding: "2rem" }}>
@@ -52,7 +70,9 @@ export default function SearchPage() {
 
       {/* Listings */}
       <section>
-        {products.length > 0 ? (
+        {loading ? (
+          <p>Loading products...</p>
+        ) : products.length > 0 ? (
           <div
             style={{
               display: "grid",
