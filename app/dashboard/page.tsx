@@ -41,7 +41,7 @@ export default function DashboardPage() {
   return (
     <Authenticator>
       {({ signOut }) => (
-        <div style={{ display: "flex", minHeight: "100vh" }}>
+        <div style={{ display: "flex", minHeight: "100vh", fontFamily: "Helvetica, sans-serif" }}>
           {/* Sidebar */}
           <aside
             style={{
@@ -76,7 +76,7 @@ export default function DashboardPage() {
                 >
                   <h1 style={{ margin: 0 }}>Featured Parts</h1>
                   <button
-                    onClick={() => router.push("/parts/new")}
+                    onClick={() => router.push("/add-part")}
                     style={{
                       backgroundColor: "#0070f3",
                       color: "white",

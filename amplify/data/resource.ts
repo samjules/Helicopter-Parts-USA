@@ -1,30 +1,25 @@
+// amplify/data/resource.ts
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
-
-/* ==========================================================================
-   DATA MODEL
-   ========================================================================== */
 
 const schema = a.schema({
   Vendor: a
     .model({
-      name: a.string().required(),        // vendor company name
-      email: a.string(),                  // contact email
-      phone: a.string(),                  // contact phone
-      address: a.string(),                // vendor address
-      website: a.string(),                // optional website
-      products: a.hasMany("Product", "vendorId"), // relationship
+      name: a.string().required(),       // Vendor name
+      contactEmail: a.string(),          // Optional email
+      phone: a.string(),                 // Optional phone
+      products: a.hasMany("Product", "vendorId"),
     })
     .authorization((allow) => [allow.publicApiKey()]),
 
   Product: a
     .model({
-      partNumber: a.string().required(),   // searchable field
-      name: a.string().required(),         // display name
-      description: a.string(),             // product details
-      price: a.float(),                    // product price
-      imageUrl: a.string(),                // product image
-      category: a.string(),                // for filtering later
-      vendorId: a.id().required(),         // relation field
+      partNumber: a.string().required(),
+      name: a.string().required(),
+      description: a.string(),
+      price: a.float(),
+      imageUrl: a.string(),
+      category: a.string(),
+      vendorId: a.id().required(),        // foreign key
       vendor: a.belongsTo("Vendor", "vendorId"),
     })
     .authorization((allow) => [allow.publicApiKey()]),
@@ -36,8 +31,6 @@ export const data = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: "apiKey",
-    apiKeyAuthorizationMode: {
-      expiresInDays: 30,
-    },
+    apiKeyAuthorizationMode: { expiresInDays: 30 },
   },
 });
