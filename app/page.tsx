@@ -1,21 +1,45 @@
+// app/page.tsx (public home)
 "use client";
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
+import { Amplify } from "aws-amplify";
+import outputs from "@/amplify_outputs.json";
+import { getCurrentUser, signOut } from "aws-amplify/auth";
+
+Amplify.configure(outputs);
 
 const client = generateClient<Schema>();
 
 export default function HomePage() {
   const [query, setQuery] = useState("");
   const [featured, setFeatured] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
+
+  // Check login status
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const current = await getCurrentUser();
+        setUser(current);
+      } catch {
+        setUser(null);
+      }
+    };
+    checkUser();
+  }, []);
 
   useEffect(() => {
     const fetchFeatured = async () => {
-      const { data } = await client.models.Product.list({ limit: 4 });
-      setFeatured(data);
+      try {
+        const { data } = await client.models.Product.list({ limit: 4 });
+        setFeatured(data);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+      }
     };
     fetchFeatured();
   }, []);
@@ -24,6 +48,16 @@ export default function HomePage() {
     e.preventDefault();
     if (query.trim()) {
       router.push(`/search?q=${encodeURIComponent(query)}`);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setUser(null);
+      router.push("/"); // back to home
+    } catch (err) {
+      console.error("Logout failed:", err);
     }
   };
 
@@ -55,6 +89,8 @@ export default function HomePage() {
         <p style={{ fontSize: "1.25rem", marginTop: "0.5rem" }}>
           Your trusted source for helicopter parts worldwide.
         </p>
+
+        {/* Search Bar (unchanged) */}
         <form
           onSubmit={handleSearch}
           style={{
@@ -71,6 +107,20 @@ export default function HomePage() {
           />
           <button type="submit">Search</button>
         </form>
+
+        {/* Action Buttons: Add Part, Dashboard, Logout */}
+        <div style={{ marginTop: "1.5rem", display: "flex", gap: "1rem" }}>
+          <button onClick={() => router.push("/add-part")}>+ Add Part</button>
+          <button onClick={() => router.push("/dashboard")}>Go to Dashboard</button>
+          {user && (
+            <button
+              onClick={handleLogout}
+              style={{ background: "crimson", color: "white" }}
+            >
+              Log Out
+            </button>
+          )}
+        </div>
       </section>
 
       {/* Featured Listings */}
