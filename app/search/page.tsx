@@ -7,19 +7,37 @@ import { useEffect, useState } from "react";
 
 const client = generateClient<Schema>();
 
+// Define a Product type matching Amplify's nullable fields
+interface Product {
+  id: string;
+  partNumber: string;
+  name: string;
+  description: string | null;
+  price: number | null;
+  imageUrl: string | null;
+  category: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const router = useRouter();
 
   useEffect(() => {
     const fetchProducts = async () => {
       if (!query) return;
-      const { data } = await client.models.Product.list({
-        filter: { partNumber: { contains: query } },
-      });
-      setProducts(data);
+      try {
+        const { data } = await client.models.Product.list({
+          filter: { partNumber: { contains: query } },
+        });
+        // Cast Amplify response to Product[]
+        setProducts(data as Product[]);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+      }
     };
     fetchProducts();
   }, [query]);
@@ -66,7 +84,9 @@ export default function SearchPage() {
                 />
                 <h3>{p.name}</h3>
                 <p>{p.partNumber}</p>
-                <p style={{ fontWeight: "bold" }}>${p.price?.toFixed(2)}</p>
+                {p.price != null && (
+                  <p style={{ fontWeight: "bold" }}>${p.price.toFixed(2)}</p>
+                )}
               </div>
             ))}
           </div>
